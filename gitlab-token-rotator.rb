@@ -4,10 +4,10 @@ class GitlabTokenRotator < Formula
   desc "An interactive CLI tool which helps you quickly rotate all your user, group, and project Gitlab access tokens."
   homepage "https://github.com/GiantFrog/homebrew-gitlab-token-rotator"
   head "https://github.com/GiantFrog/homebrew-gitlab-token-rotator.git"
-  url "https://github.com/GiantFrog/homebrew-gitlab-token-rotator/releases/download/v2025.5.28/gitlab-token-rotator.tar.gz"
-  sha256 "90a22be39829586664bc820bf859b7623be88cbf1eae0c12badd143220ba93ef"
+  url "https://github.com/GiantFrog/homebrew-gitlab-token-rotator/releases/download/v2025.5.28/release.tar.gz"
+  sha256 "bd17dcab66d6cb87eeb3c1d7072dd32dc2f4a424564e5b468b77457cdc0809fe"
 
-  depends_on "python3"
+  depends_on "python@3.12"
 
   resource "certifi" do
     url "https://files.pythonhosted.org/packages/1c/ab/c9f1e32b7b1bf505bf26f0ef697775960db7932abeb7b516de930ba2705f/certifi-2025.1.31.tar.gz"
@@ -75,11 +75,6 @@ class GitlabTokenRotator < Formula
   end
 
   def install
-    virtualenv_create(libexec, "python3")
     virtualenv_install_with_resources
-  end
-
-  test do
-    false   # tests? in this economy?
   end
 end

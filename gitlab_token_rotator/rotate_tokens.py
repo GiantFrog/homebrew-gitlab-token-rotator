@@ -7,6 +7,8 @@ import pyperclip
 from sys import exit
 import webbrowser
 
+
+# Parse args and env vars!
 parser = argparse.ArgumentParser(
     description="\033[1mGitlab Token Rotator\033[0m"
 )
@@ -41,18 +43,32 @@ else:
     if args.instance[-1] == '/':
         args.instance = args.instance[:-1]
 
+# Global variables
+new_expiration_date = (datetime.today() + timedelta(days=args.lifetime)).strftime('%Y-%m-%d')
+this_scripts_token = None
+
 
 def needs_rotation(token):
+    """Checks if a token is due for rotation.
+    @:param: The gitlab token to analyze.
+    @:rtype: bool
+    @:returns: True if the token has an expiration date, is not revoked, and was not created recently according to the "freshness" setting.
+    """
     created_days_ago = (datetime.now(timezone.utc) - datetime.fromisoformat(token.created_at)).days
     if token.revoked or token.expires_at is None:
         return False    # don't care
-    if token.id == this_scripts_token.id:
+    if token.id == getattr(this_scripts_token, 'id', None):
         return False    # let's wait to renew our own token until after we finish everything else!
     if created_days_ago < args.freshness:
         return False    # this token was just updated; let's not bother.
     return True
 
 def process_token(token):
+    """Presents a given token to the user, who can choose to rotate it, revoke it, or do nothing with it.
+    @:param: The gitlab token object to present to the user.
+    @:rtype: bool
+    @:returns: True if the token was rotated.
+    """
     print("――――――――――――――――――――――――――――――――――――――――――――――――――――――――")
     expiry_date = datetime.strptime(token.expires_at, '%Y-%m-%d')
     created_days_ago = (datetime.now(timezone.utc) - datetime.fromisoformat(token.created_at)).days
@@ -88,7 +104,11 @@ def process_token(token):
                 print("Unrecognized input. Try again? Just type r, d, or i.")
 
 
-if __name__ == '__main__':
+def main():
+    """Using a token stored in the keyring, loops through every token belonging to the user, user's projects, user's groups, and user's groups' projects.
+    When token is due for rotation, asks the user how they would like to proceed.
+    :return: 
+    """
     # INITIALIZE!
     access_token = keyring.get_password('GitLab Token Rotator', args.instance)
     while True:
@@ -113,8 +133,8 @@ if __name__ == '__main__':
                     access_token = None
 
     print("WARNING: Rotating a token immediately revokes the old one. The gitlab API does not include a feature to undo this action.\n\033[1mPlease make sure you're in a position to actually put the new token where it needs to go before you choose to rotate it!\033[0m")
-    new_expiration_date = (datetime.today() + timedelta(days=args.lifetime)).strftime('%Y-%m-%d')
     our_user = gl.users.get(gl.user.id, lazy=True)
+    global this_scripts_token
     this_scripts_token = gl.personal_access_tokens.get("self")
     we_did_something = False
 
@@ -139,9 +159,12 @@ if __name__ == '__main__':
             if process_token(t):
                 we_did_something = True
 
+    if not we_did_something:
+        print("Your user has no tokens in need of rotation!")
+
     # GROUP TOKENS
+    print("――――――――――――――――――――――――――――――――――――――――――――――――――――――――\nProcessing all of the projects in each of your groups. This may take a few minutes!")
     for membership in our_user.memberships.list(type='Namespace', iterator=True):
-        print("――――――――――――――――――――――――――――――――――――――――――――――――――――――――\nProcessing all of the projects in each of your groups. This may take a few minutes!")
         # Collect all the tokens belonging to this group and its projects.
         group = gl.groups.get(membership.source_id)
         group_tokens = group.access_tokens.list(get_all=True)
@@ -182,3 +205,7 @@ if __name__ == '__main__':
         print(f"All done! Enjoy your fresh tokens! They will expire on {new_expiration_date}, so mark your calendar before then.")
     else:
         print(f"You don't have any tokens that need rotating!\n(Tokens created up to {args.freshness} days ago are considered fresh and not in need of rotation.)")
+
+
+if __name__ == '__main__':
+    main()
