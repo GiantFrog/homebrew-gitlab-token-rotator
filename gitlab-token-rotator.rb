@@ -5,7 +5,7 @@ class GitlabTokenRotator < Formula
   homepage "https://github.com/GiantFrog/homebrew-gitlab-token-rotator"
   head "https://github.com/GiantFrog/homebrew-gitlab-token-rotator.git"
   url "https://github.com/GiantFrog/homebrew-gitlab-token-rotator/releases/download/v2025.5.28/release.tar.gz"
-  sha256 "bd17dcab66d6cb87eeb3c1d7072dd32dc2f4a424564e5b468b77457cdc0809fe"
+  sha256 "b1e2627b96dcda8bc44c05783327fd6b61e40982a367d33eb777e51d89e44e30"
 
   depends_on "python@3.12"
 
